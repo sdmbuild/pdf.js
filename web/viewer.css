@@ -119,20 +119,20 @@ select {
   display: none;
 }
 
-:-webkit-full-screen .textLayer > div {
+:-webkit-full-screen .textLayer div {
   cursor: none;
 }
 
-:-moz-full-screen .textLayer > div {
+:-moz-full-screen .textLayer div {
   cursor: none;
 }
 
-:fullscreen .textLayer > div {
+:fullscreen .textLayer div {
   cursor: none;
 }
 
 #viewerContainer.presentationControls,
-#viewerContainer.presentationControls .textLayer > div {
+#viewerContainer.presentationControls .textLayer div {
   cursor: default;
 }
 
@@ -202,6 +202,42 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   right: 0px;
 }
 
+#sdmSidebarContainer {
+  position: relative;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  visibility: hidden;
+  overflow: hidden;
+  -webkit-transition-duration: 200ms;
+  -webkit-transition-timing-function: ease;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+
+}
+html[dir='ltr'] #sdmSidebarContainer {
+  -webkit-transition-property: right;
+  transition-property: right;
+  right: -300px;
+}
+html[dir='rtl'] #sdmSidebarContainer {
+  -webkit-transition-property: left;
+  transition-property: left;
+  left: -300px;
+}
+
+#outerContainer.sdmSidebarOpen #sdmSidebarContainer {
+  position: absolute;
+  overflow: auto;
+  visibility: visible;
+}
+html[dir='ltr'] #outerContainer.sdmSidebarOpen #sdmSidebarContainer {
+  right: 0px;
+}
+html[dir='rtl'] #outerContainer.sdmSidebarOpen #sdmSidebarContainer {
+  left: 0px;
+}
+
 #mainContainer {
   position: absolute;
   top: 0;
@@ -224,6 +260,16 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
   transition-property: right;
   right: 200px;
 }
+html[dir='ltr'] #outerContainer.sdmSidebarOpen > #mainContainer {
+  -webkit-transition-property: right;
+  transition-property: right;
+  right: 300px;
+}
+html[dir='rtl'] #outerContainer.sdmSidebarOpen > #mainContainer {
+  -webkit-transition-property: left;
+  transition-property: left;
+  left: 300px;
+}
 
 #sidebarContent {
   top: 32px;
@@ -242,10 +288,27 @@ html[dir='rtl'] #sidebarContent {
   box-shadow: inset 1px 0 0 hsla(0,0%,0%,.25);
 }
 
+#sdmSidebarContent {
+  top: 32px;
+  bottom: 0;
+  overflow: auto;
+  position: absolute;
+  width: 300px;
+
+  background-color: hsla(0,0%,0%,.1);
+  box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
+}
+html[dir='ltr'] #sdmSidebarContent {
+  right: 0;
+}
+html[dir='rtl'] #sdmSidebarContent {
+  left: 0;
+}
+
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  top: 32px;
+  top: 64px;
   right: 0;
   bottom: 0;
   left: 0;
@@ -292,7 +355,7 @@ html[dir='rtl'] #toolbarSidebar {
 
 #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
-  height: 32px;
+  height: 64px;
   background-color: #474747; /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
@@ -313,6 +376,10 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 #toolbarViewer {
+  height: 32px;
+}
+
+#sdmHistoryBar {
   height: 32px;
 }
 
@@ -844,6 +911,13 @@ html[dir='rtl'] .toolbarButton#sidebarToggle::before {
   content: url(images/toolbarButton-sidebarToggle-rtl.png);
 }
 
+html[dir='ltr'] .toolbarButton#sdmSidebarToggle::before {
+  content: url(images/toolbarButton-sidebarToggle-rtl.png);
+}
+html[dir='rtl'] .toolbarButton#sdmSidebarToggle::before {
+  content: url(images/toolbarButton-sidebarToggle.png);
+}
+
 html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
   content: url(images/toolbarButton-secondaryToolbarToggle.png);
 }
@@ -1288,7 +1362,7 @@ canvas {
   overflow: hidden;
 }
 
-.textLayer > div {
+.textLayer div {
   color: transparent;
   position: absolute;
   line-height: 1;
@@ -1318,6 +1392,16 @@ canvas {
 
 .textLayer .highlight.selected {
   background-color: rgba(0, 100, 0, 0.2);
+}
+
+/* SDM Highlight */
+.sdmHighlight div {
+  background-color: rgba(0,255,0,0.3);
+}
+
+/* Hover highlight color for SDM-associable objects */
+[mcid]:hover div {
+  background-color: rgba(0,255,255,0.3);
 }
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
@@ -1554,13 +1638,13 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   font-size: 10px;
 }
 
-#viewer.textLayer-visible .textLayer > div,
-#viewer.textLayer-hover .textLayer > div:hover {
+#viewer.textLayer-visible .textLayer div,
+#viewer.textLayer-hover .textLayer div:hover {
   background-color: white;
   color: black;
 }
 
-#viewer.textLayer-shadow .textLayer > div {
+#viewer.textLayer-shadow .textLayer div {
   background-color: rgba(255,255,255, .6);
   color: black;
 }
