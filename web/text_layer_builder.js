@@ -51,6 +51,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
+    this.hierDivs = document.createDocumentFragment();
+    this.currentDiv = this.hierDivs;
     this.renderingDone = false;
   };
 
@@ -76,6 +78,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     for (var i = 0, ii = textDivs.length; i < ii; i++) {
       var textDiv = textDivs[i];
       if ('isWhitespace' in textDiv.dataset) {
+        textDiv.parentNode.removeChild(textdiv);
         continue;
       }
 
@@ -83,7 +86,6 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       var width = ctx.measureText(textDiv.textContent).width;
 
       if (width > 0) {
-        textLayerFrag.appendChild(textDiv);
         var textScale = textDiv.dataset.canvasWidth / width;
         var rotation = textDiv.dataset.angle;
         var transform = 'scale(' + textScale + ', 1)';
@@ -93,7 +95,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       }
     }
 
-    textLayerDiv.appendChild(textLayerFrag);
+    textLayerDiv.appendChild(this.hierDivs);
+
     this.renderingDone = true;
     this.updateMatches();
   };
@@ -138,6 +141,24 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     // The content of the div is set in the `setTextContent` function.
 
     this.textDivs.push(textDiv);
+    this.currentDiv.appendChild(textDiv);
+  };
+
+  this.beginMarkedContent = function textLayerBeginMarkedContent(tag, properties) {
+    var markedDiv = document.createElement('div');
+    markedDiv.setAttribute("class", tag.name);
+    if(properties !== null) {
+      for(var name in properties) {
+        markedDiv.setAttribute(name, properties[name]);
+      }
+    }
+
+    this.currentDiv.appendChild(markedDiv);
+    this.currentDiv = markedDiv;
+  };
+
+  this.endMarkedContent = function textLayerEndMarkedContent() {
+    this.currentDiv = this.currentDiv.parentNode;
   };
 
   this.insertDivContent = function textLayerUpdateTextContent() {
