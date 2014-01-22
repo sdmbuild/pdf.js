@@ -1862,14 +1862,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // TODO Marked content.
     },
     beginMarkedContent: function CanvasGraphics_beginMarkedContent(tag) {
-      // TODO Marked content.
+      this.textLayer.beginMarkedContent(tag, null);
     },
     beginMarkedContentProps: function CanvasGraphics_beginMarkedContentProps(
                                         tag, properties) {
-      // TODO Marked content.
+      this.textLayer.beginMarkedContent(tag, properties);
     },
     endMarkedContent: function CanvasGraphics_endMarkedContent() {
-      // TODO Marked content.
+      this.textLayer.endMarkedContent();
     },
 
     // Compatibility
