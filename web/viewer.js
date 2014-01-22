@@ -108,6 +108,7 @@ var PDFView = {
   fellback: false,
   pdfDocument: null,
   sidebarOpen: false,
+  sdmSidebarOpen: false,
   pageViewScroll: null,
   thumbnailViewScroll: null,
   pageRotation: 0,
@@ -1733,6 +1734,14 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.renderHighestPriority();
     });
 
+  document.getElementById('sdmSidebarToggle').addEventListener('click',
+    function() {
+      this.classList.toggle('toggled');
+      outerContainer.classList.toggle('sdmSidebarOpen');
+      PDFView.sdmSidebarOpen = outerContainer.classList.contains('sdmSidebarOpen');
+      sdmOnLoad();
+    });
+
   document.getElementById('viewThumbnail').addEventListener('click',
     function() {
       PDFView.switchSidebarView('thumbs');
@@ -1794,6 +1803,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   document.getElementById('download').addEventListener('click',
     SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
+
+  document.oncontextmenu=RightMouseDown;
+  document.onmousedown = mouseDown;
 
 //#if (FIREFOX || MOZCENTRAL)
 //PDFView.setTitleUsingUrl(file);
