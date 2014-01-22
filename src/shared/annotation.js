@@ -719,6 +719,9 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       element.style.height = height + 'px';
 
       element.href = this.data.url || '';
+      element.onclick = sdmLinkHandler;
+      element.onmouseover = sdmOnMouseOver;
+      element.onmouseout = sdmOnMouseOut;
       return element;
     }
   });
