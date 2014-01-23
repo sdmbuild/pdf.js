@@ -78,7 +78,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     for (var i = 0, ii = textDivs.length; i < ii; i++) {
       var textDiv = textDivs[i];
       if ('isWhitespace' in textDiv.dataset) {
-        textDiv.parentNode.removeChild(textdiv);
+        textDiv.parentNode.removeChild(textDiv);
         continue;
       }
 
