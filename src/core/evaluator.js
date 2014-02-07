@@ -19,7 +19,7 @@
            info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, warn, Util, Promise, LegacyPromise,
+           getTilingPatternIR, warn, Util, Promise, LegacyPromise,
            RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
            UNSUPPORTED_FEATURES, UnsupportedManager */
 
@@ -96,7 +96,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var groupOptions = {
           matrix: matrix,
           bbox: bbox,
-          smask: !!smask,
+          smask: smask,
           isolated: false,
           knockout: false
         };
@@ -105,8 +105,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (isName(groupSubtype) && groupSubtype.name === 'Transparency') {
           groupOptions.isolated = group.get('I') || false;
           groupOptions.knockout = group.get('K') || false;
-          // There is also a group colorspace, but since we put everything in
-          // RGB I'm not sure we need it.
+          var colorSpace = group.get('CS');
+          groupOptions.colorSpace = colorSpace ?
+            ColorSpace.parseToIR(colorSpace, this.xref, resources) : null;
         }
         operatorList.addOp(OPS.beginGroup, [groupOptions]);
       }
@@ -165,7 +166,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
-        var imgData = imageObj.getImageData();
+        var imgData = imageObj.createImageData();
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
@@ -188,12 +189,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 
       PDFImage.buildImage(function(imageObj) {
-          var imgData = imageObj.getImageData();
+          var imgData = imageObj.createImageData();
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
                             null, [imgData.data.buffer]);
         }, self.handler, self.xref, resources, image, inline);
 
       operatorList.addOp(OPS.paintImageXObject, args);
+    },
+
+    handleSMask: function PartialEvaluator_handleSmask(smask, resources,
+                                                       operatorList) {
+      var smaskContent = smask.get('G');
+      var smaskOptions = {
+        subtype: smask.get('S').name,
+        backdrop: smask.get('BC')
+      };
+
+      this.buildFormXObject(resources, smaskContent, smaskOptions,
+                            operatorList);
     },
 
     handleTilingType: function PartialEvaluator_handleTilingType(
@@ -205,7 +218,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Add the dependencies to the parent operator list so they are resolved
       // before sub operator list is executed synchronously.
       operatorList.addDependencies(tilingOpList.dependencies);
-      operatorList.addOp(fn, TilingPattern.getIR({
+      operatorList.addOp(fn, getTilingPatternIR({
                                fnArray: tilingOpList.fnArray,
                                argsArray: tilingOpList.argsArray
                               }, patternDict, args));
@@ -265,7 +278,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     setGState: function PartialEvaluator_setGState(resources, gState,
-                                                   operatorList) {
+                                                   operatorList, xref) {
 
       var self = this;
       // TODO(mack): This should be rewritten so that this function returns
@@ -295,9 +308,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'SMask':
-            // We support the default so don't trigger a warning bar.
-            if (!isName(value) || value.name != 'None')
-              UnsupportedManager.notify(UNSUPPORTED_FEATURES.smask);
+            if (isName(value) && value.name === 'None') {
+              gStateObj.push([key, false]);
+              break;
+            }
+            var dict = xref.fetchIfRef(value);
+            if (isDict(dict)) {
+              self.handleSMask(dict, resources, operatorList);
+              gStateObj.push([key, true]);
+            } else {
+              warn('Unsupported SMask type');
+            }
+
             break;
           // Only generate info log messages for the following since
           // they are unlikey to have a big impact on the rendering.
@@ -579,7 +601,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
 
               var gState = extGState.get(dictName.name);
-              self.setGState(resources, gState, operatorList);
+              self.setGState(resources, gState, operatorList, xref);
               args = [];
               continue;
           } // switch
@@ -887,8 +909,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       } else if (isStream(cmapObj)) {
         var cmap = CMapFactory.create(cmapObj).map;
         // Convert UTF-16BE
-        for (var i in cmap) {
-          var token = cmap[i];
+        // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
+        //  to iterate over all keys.
+        cmap.forEach(function(token, i) {
           var str = [];
           for (var k = 0; k < token.length; k += 2) {
             var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
@@ -901,7 +924,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
           }
           cmap[i] = String.fromCharCode.apply(String, str);
-        }
+        });
         return cmap;
       }
       return charToUnicode;
@@ -1296,7 +1319,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // replacing queue items
         squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
         argsArray.splice(j, count * 4,
-          [{width: imgWidth, height: imgHeight, data: imgData}, map]);
+          [{width: imgWidth, height: imgHeight, kind: 'rgba_32bpp',
+            data: imgData}, map]);
         i = j;
         ii = argsArray.length;
       }

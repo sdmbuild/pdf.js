@@ -277,7 +277,6 @@ target.bundle = function(args) {
   var SHARED_SRC_FILES = [
     'shared/util.js',
     'shared/colorspace.js',
-    'shared/pattern.js',
     'shared/function.js',
     'shared/annotation.js',
   ];
@@ -286,6 +285,7 @@ target.bundle = function(args) {
     'display/api.js',
     'display/metadata.js',
     'display/canvas.js',
+    'display/pattern_helper.js',
     'display/font_loader.js'
   ]);
 
@@ -298,6 +298,7 @@ target.bundle = function(args) {
     'core/charsets.js',
     'core/cidmaps.js',
     'core/crypto.js',
+    'core/pattern.js',
     'core/evaluator.js',
     'core/fonts.js',
     'core/font_renderer.js',
@@ -305,6 +306,7 @@ target.bundle = function(args) {
     'core/image.js',
     'core/metrics.js',
     'core/parser.js',
+    'core/ps_parser.js',
     'core/stream.js',
     'core/worker.js',
     'core/jpx.js',
@@ -1134,7 +1136,7 @@ target.lint = function() {
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
   if (!test('-f', jshintPath)) {
     echo('jshint is not installed -- installing...');
-    exec('npm install jshint');
+    exec('npm install jshint@1.1'); // TODO read version from package.json
   }
 
   exit(exec('"' + jshintPath + '" --reporter test/reporter.js ' +

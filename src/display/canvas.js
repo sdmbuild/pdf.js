@@ -16,8 +16,8 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           Pattern, TilingPattern, Util, warn, assert, info, shadow,
-           TextRenderingMode, OPS, Promise */
+           TilingPattern, OPS, Promise, Util, warn, assert, info, shadow,
+           TextRenderingMode, getShadingPatternFromIR */
 
 'use strict';
 
@@ -376,6 +376,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
+    this.activeSMask = null; // nonclonable field (see the save method below)
 
     this.old = old;
   }
@@ -416,6 +417,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.baseTransform = null;
     this.baseTransformStack = [];
     this.groupLevel = 0;
+    this.smaskStack = [];
+    this.smaskCounter = 0;
+    this.tempSMask = null;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -433,45 +437,97 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // of putImageData(). (E.g. in Firefox we make two short-lived copies of
     // the data passed to putImageData()). |n| shouldn't be too small, however,
     // because too many putImageData() calls will slow things down.
+    //
+    // Note: as written, if the last chunk is partial, the putImageData() call
+    // will (conceptually) put pixels past the bounds of the canvas.  But
+    // that's ok; any such pixels are ignored.
 
-    var rowsInFullChunks = 16;
-    var fullChunks = (imgData.height / rowsInFullChunks) | 0;
-    var rowsInLastChunk = imgData.height - fullChunks * rowsInFullChunks;
-    var elemsInFullChunks = imgData.width * rowsInFullChunks * 4;
-    var elemsInLastChunk = imgData.width * rowsInLastChunk * 4;
+    var height = imgData.height, width = imgData.width;
+    var fullChunkHeight = 16;
+    var fracChunks = height / fullChunkHeight;
+    var fullChunks = Math.floor(fracChunks);
+    var totalChunks = Math.ceil(fracChunks);
+    var partialChunkHeight = height - fullChunks * fullChunkHeight;
 
-    var chunkImgData = ctx.createImageData(imgData.width, rowsInFullChunks);
+    var chunkImgData = ctx.createImageData(width, fullChunkHeight);
     var srcPos = 0;
     var src = imgData.data;
     var dst = chunkImgData.data;
-    var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
 
-    // Do all the full-size chunks.
-    for (var i = 0; i < fullChunks; i++) {
-      if (haveSetAndSubarray) {
-        dst.set(src.subarray(srcPos, srcPos + elemsInFullChunks));
-        srcPos += elemsInFullChunks;
-      } else {
-        for (var j = 0; j < elemsInFullChunks; j++) {
-          chunkImgData.data[j] = imgData.data[srcPos++];
-        }
-      }
-      ctx.putImageData(chunkImgData, 0, i * rowsInFullChunks);
-    }
+    // There are multiple forms in which the pixel data can be passed, and
+    // imgData.kind tells us which one this is.
 
-    // Do the final, partial chunk, if required.
-    if (rowsInLastChunk !== 0) {
-      if (haveSetAndSubarray) {
-        dst.set(src.subarray(srcPos, srcPos + elemsInLastChunk));
-        srcPos += elemsInLastChunk;
-      } else {
-        for (var j = 0; j < elemsInLastChunk; j++) {
-          chunkImgData.data[j] = imgData.data[srcPos++];
-        }
+    if (imgData.kind === 'grayscale_1bpp') {
+      // Grayscale, 1 bit per pixel (i.e. black-and-white).
+      var srcData = imgData.data;
+      var destData = chunkImgData.data;
+      var destDataLength = destData.length;
+      var origLength = imgData.origLength;
+      for (var i = 3; i < destDataLength; i += 4) {
+        destData[i] = 255;
       }
-      // This (conceptually) puts pixels past the bounds of the canvas.  But
-      // that's ok; any such pixels are ignored.
-      ctx.putImageData(chunkImgData, 0, fullChunks * rowsInFullChunks);
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var destPos = 0;
+        for (var j = 0; j < thisChunkHeight; j++) {
+          var mask = 0;
+          var srcByte = 0;
+          for (var k = 0; k < width; k++, destPos += 4) {
+            if (mask === 0) {
+              if (srcPos >= origLength) {
+                break;
+              }
+              srcByte = srcData[srcPos++];
+              mask = 128;
+            }
+
+            if ((srcByte & mask)) {
+              destData[destPos] = 255;
+              destData[destPos + 1] = 255;
+              destData[destPos + 2] = 255;
+            } else {
+              destData[destPos] = 0;
+              destData[destPos + 1] = 0;
+              destData[destPos + 2] = 0;
+            }
+
+            mask >>= 1;
+          }
+        }
+        if (destPos < destDataLength) {
+          // We ran out of input. Make all remaining pixels transparent.
+          destPos += 3;
+          do {
+            destData[destPos] = 0;
+            destPos += 4;
+          } while (destPos < destDataLength);
+        }
+
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
+      }
+
+    } else if (imgData.kind === 'rgba_32bpp') {
+      // RGBA, 32-bits per pixel.
+      var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
+
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var elemsInThisChunk = imgData.width * thisChunkHeight * 4;
+        if (haveSetAndSubarray) {
+          dst.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
+          srcPos += elemsInThisChunk;
+        } else {
+          for (var j = 0; j < elemsInThisChunk; j++) {
+            chunkImgData.data[j] = imgData.data[srcPos++];
+          }
+        }
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
+      }
+
+    } else {
+        error('bad image kind: ' + imgData.kind);
     }
   }
 
@@ -522,6 +578,73 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
+  function composeSMask(ctx, smask, layerCtx) {
+    var mask = smask.canvas;
+    var maskCtx = smask.context;
+    var width = mask.width, height = mask.height;
+
+    var addBackdropFn;
+    if (smask.backdrop) {
+      var cs = smask.colorSpace || ColorSpace.singletons.rgb;
+      var backdrop = cs.getRgb(smask.backdrop, 0);
+      addBackdropFn = function (r0, g0, b0, bytes) {
+        var length = bytes.length;
+        for (var i = 3; i < length; i += 4) {
+          var alpha = bytes[i] / 255;
+          if (alpha === 0) {
+            bytes[i - 3] = r0;
+            bytes[i - 2] = g0;
+            bytes[i - 1] = b0;
+          } else if (alpha < 1) {
+            var alpha_ = 1 - alpha;
+            bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) | 0;
+            bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) | 0;
+            bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) | 0;
+          }
+        }
+      }.bind(null, backdrop[0], backdrop[1], backdrop[2]);
+    } else {
+      addBackdropFn = function () {};
+    }
+
+    var composeFn;
+    if (smask.subtype === 'Luminosity') {
+      composeFn = function (maskDataBytes, layerDataBytes) {
+        var length = maskDataBytes.length;
+        for (var i = 3; i < length; i += 4) {
+          var y = ((maskDataBytes[i - 3] * 77) +     // * 0.3 / 255 * 0x10000
+                   (maskDataBytes[i - 2] * 152) +    // * 0.59 ....
+                   (maskDataBytes[i - 1] * 28)) | 0; // * 0.11 ....
+          layerDataBytes[i] = (layerDataBytes[i] * y) >> 16;
+        }
+      };
+    } else {
+      composeFn = function (maskDataBytes, layerDataBytes) {
+        var length = maskDataBytes.length;
+        for (var i = 3; i < length; i += 4) {
+          var alpha = maskDataBytes[i];
+          layerDataBytes[i] = (layerDataBytes[i] * alpha / 255) | 0;
+        }
+      };
+    }
+
+    // processing image in chunks to save memory
+    var chunkSize = 16;
+    for (var row = 0; row < height; row += chunkSize) {
+      var chunkHeight = Math.min(chunkSize, height - row);
+      var maskData = maskCtx.getImageData(0, row, width, chunkHeight);
+      var layerData = layerCtx.getImageData(0, row, width, chunkHeight);
+
+      addBackdropFn(maskData.data);
+      composeFn(maskData.data, layerData.data);
+
+      maskCtx.putImageData(layerData, 0, row);
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(mask, smask.offsetX, smask.offsetY);
+  }
+
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
   var NORMAL_CLIP = {};
@@ -548,9 +671,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var transform = viewport.transform;
-      this.baseTransform = transform.slice();
+
       this.ctx.save();
       this.ctx.transform.apply(this.ctx, transform);
+
+      this.baseTransform = this.ctx.mozCurrentTransform.slice();
 
       if (this.textLayer) {
         this.textLayer.beginLayout();
@@ -730,18 +855,70 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               this.ctx.globalCompositeOperation = 'source-over';
             }
             break;
+          case 'SMask':
+            if (this.current.activeSMask) {
+              this.endSMaskGroup();
+            }
+            this.current.activeSMask = value ? this.tempSMask : null;
+            if (this.current.activeSMask) {
+              this.beginSMaskGroup();
+            }
+            this.tempSMask = null;
+            break;
         }
       }
+    },
+    beginSMaskGroup: function CanvasGraphics_beginSMaskGroup() {
+
+      var activeSMask = this.current.activeSMask;
+      var drawnWidth = activeSMask.canvas.width;
+      var drawnHeight = activeSMask.canvas.height;
+      var cacheId = 'smaskGroupAt' + this.groupLevel;
+      var scratchCanvas = CachedCanvases.getCanvas(
+        cacheId, drawnWidth, drawnHeight, true);
+
+      var currentCtx = this.ctx;
+      var currentTransform = currentCtx.mozCurrentTransform;
+      this.ctx.save();
+
+      var groupCtx = scratchCanvas.context;
+      groupCtx.translate(-activeSMask.offsetX, -activeSMask.offsetY);
+      groupCtx.transform.apply(groupCtx, currentTransform);
+
+      copyCtxState(currentCtx, groupCtx);
+      this.ctx = groupCtx;
+      this.setGState([
+        ['BM', 'Normal'],
+        ['ca', 1],
+        ['CA', 1]
+      ]);
+      this.groupStack.push(currentCtx);
+      this.groupLevel++;
+    },
+    endSMaskGroup: function CanvasGraphics_endSMaskGroup() {
+      var groupCtx = this.ctx;
+      this.groupLevel--;
+      this.ctx = this.groupStack.pop();
+
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
+      this.ctx.restore();
     },
     save: function CanvasGraphics_save() {
       this.ctx.save();
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
+      if (this.current.activeSMask) {
+        this.current.activeSMask = null;
+      }
     },
     restore: function CanvasGraphics_restore() {
       var prev = this.stateStack.pop();
       if (prev) {
+        if (this.current.activeSMask) {
+          this.endSMaskGroup();
+        }
+
         this.current = prev;
         this.ctx.restore();
       }
@@ -1375,10 +1552,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs,
                                         this.commonObjs, this.baseTransform);
-      } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
-        var pattern = Pattern.shadingFromIR(IR);
       } else {
-        error('Unkown IR type ' + IR[0]);
+        var pattern = getShadingPatternFromIR(IR);
       }
       return pattern;
     },
@@ -1458,8 +1633,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
 
       this.save();
-      var pattern = Pattern.shadingFromIR(patternIR);
-      ctx.fillStyle = pattern.getPattern(ctx, this);
+      var pattern = getShadingPatternFromIR(patternIR);
+      ctx.fillStyle = pattern.getPattern(ctx, this, true);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -1571,9 +1746,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var drawnWidth = Math.max(Math.ceil(bounds[2] - bounds[0]), 1);
       var drawnHeight = Math.max(Math.ceil(bounds[3] - bounds[1]), 1);
 
+      var cacheId = 'groupAt' + this.groupLevel;
+      if (group.smask) {
+        // Using two cache entries is case if masks are used one after another.
+        cacheId +=  '_smask_' + ((this.smaskCounter++) % 2);
+      }
       var scratchCanvas = CachedCanvases.getCanvas(
-        'groupAt' + this.groupLevel, drawnWidth, drawnHeight, true);
+        cacheId, drawnWidth, drawnHeight, true);
       var groupCtx = scratchCanvas.context;
+
       // Since we created a new canvas that is just the size of the bounding box
       // we have to translate the group ctx.
       var offsetX = bounds[0];
@@ -1581,16 +1762,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       groupCtx.translate(-offsetX, -offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
-      // Setup the current ctx so when the group is popped we draw it the right
-      // location.
-      currentCtx.setTransform(1, 0, 0, 1, 0, 0);
-      currentCtx.translate(offsetX, offsetY);
+      if (group.smask) {
+        // Saving state and cached mask to be used in setGState.
+        this.smaskStack.push({
+          canvas: scratchCanvas.canvas,
+          context: groupCtx,
+          offsetX: offsetX,
+          offsetY: offsetY,
+          subtype: group.smask.subtype,
+          backdrop: group.smask.backdrop,
+          colorSpace: group.colorSpace && ColorSpace.fromIR(group.colorSpace)
+        });
+      } else {
+        // Setup the current ctx so when the group is popped we draw it at the
+        // right location.
+        currentCtx.setTransform(1, 0, 0, 1, 0, 0);
+        currentCtx.translate(offsetX, offsetY);
+      }
       // The transparency group inherits all off the current graphics state
       // except the blend mode, soft mask, and alpha constants.
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
-        ['SMask', 'None'],
         ['BM', 'Normal'],
         ['ca', 1],
         ['CA', 1]
@@ -1610,7 +1803,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else {
         this.ctx.mozImageSmoothingEnabled = false;
       }
-      this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      if (group.smask) {
+        this.tempSMask = this.smaskStack.pop();
+      } else {
+        this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      }
       this.restore();
     },
 
