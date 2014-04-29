@@ -343,6 +343,21 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "bug878026",
+       "file": "pdfs/bug878026.pdf",
+       "md5": "13072db0586f2b4e96de189e23fc7395",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue4550-text",
+       "file": "pdfs/issue4550.pdf",
+       "md5": "d64cfc4b50e225f596130d9938e8d5cc",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "jai-pdf",
        "file": "pdfs/jai.pdf",
        "md5": "1f5dd128c3757420a881a155f2f8ace3",
@@ -377,6 +392,15 @@
        "md5": "db2fedbd36d6fa27d4e52f9bd2d96b8c",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "bug850854",
+       "file": "pdfs/bug850854.pdf",
+       "md5": "346a034a80120d123b9fefc42bcb11da",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
     },
     {  "id": "wdsg_fitc",
        "file": "pdfs/wdsg_fitc.pdf",
@@ -641,6 +665,16 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue4573",
+       "file": "pdfs/issue4573.pdf",
+       "md5": "34b0c4fdee19e57033275b766c5f57a3",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq",
+       "about": "Seac with differences array that messes up mapping."
+    },
     {  "id": "ocs",
       "file": "pdfs/ocs.pdf",
       "md5": "2ade57e954ae7632749cf328daeaa7a8",
@@ -708,6 +742,13 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue4461-load",
+      "file": "pdfs/issue4461.pdf",
+      "md5": "9df4ecaae429adb5dc93d9342a53159d",
+      "rounds": 1,
+      "type": "load",
+      "about": "Document without /Resources entry in page dictionary"
     },
     {  "id": "issue1249-load",
       "file": "pdfs/issue1249.pdf",
@@ -1006,6 +1047,12 @@
       "rounds": 1,
       "lastPage": 2,
       "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue4630",
+      "file": "pdfs/issue4630.pdf",
+      "md5": "46690a12b953c9ad660f3f6453f8785c",
+      "rounds": 1,
       "type": "eq"
     },
     {  "id": "issue845",
@@ -1536,6 +1583,12 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue4668",
+      "file": "pdfs/issue4668.pdf",
+      "md5": "a749d5ca995ad745411406d29156b04e",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue3666",
        "file": "pdfs/issue3666.pdf",
        "md5": "c2156a34b9634b174556910732ab9df0",
@@ -1560,6 +1613,22 @@
        "link": true,
        "firstPage": 4,
        "lastPage": 4,
+       "type": "eq"
+    },
+    {  "id": "issue4246",
+      "file": "pdfs/issue4246.pdf",
+      "md5": "ed81787b83cc317c9f049643b853bea3",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Image mask in higher resolution than the image itself"
+    },
+    {  "id": "issue4436",
+       "file": "pdfs/issue4436.pdf",
+       "md5": "34e6af7441961f5940e6440a62e37427",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 9,
+       "lastPage": 9,
        "type": "eq"
     }
 ]

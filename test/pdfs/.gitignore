@@ -17,6 +17,7 @@
 !simpletype3font.pdf
 !sizes.pdf
 !close-path-bug.pdf
+!issue4630.pdf
 !alphatrans.pdf
 !devicen.pdf
 !cmykjpeg.pdf
@@ -33,6 +34,7 @@
 !issue918.pdf
 !issue1905.pdf
 !issue2833.pdf
+!issue4550.pdf
 !rotated.pdf
 !issue1249.pdf
 !issue1171.pdf
@@ -48,8 +50,10 @@
 !bug864847.pdf
 !issue1002.pdf
 !issue925.pdf
+!issue4668.pdf
 !gradientfill.pdf
 !bug903856.pdf
+!bug850854.pdf
 !basicapi.pdf
 !mixedfonts.pdf
 !shading_extend.pdf
@@ -59,6 +63,7 @@
 !noembed-eucjp.pdf
 !noembed-sjis.pdf
 !vertical.pdf
+!bug878026.pdf
 !issue3025.pdf
 !issue2099-1.pdf
 !issue3371.pdf
@@ -66,3 +71,6 @@
 !bug946506.pdf
 !issue3885.pdf
 !bug859204.pdf
+!issue4246.pdf
+!issue4461.pdf
+!issue4573.pdf
