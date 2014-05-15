@@ -1404,6 +1404,14 @@ canvas {
 .sdmHighlight div {
   background-color: rgba(0,255,0,0.3);
 }
+label.sdmHighlight {
+  background-color: rgba(0,255,0,0.3);
+}
+
+/* SDM Selection */
+.sdmSelection div {
+  background-color: rgba(255,255,0,0.3);
+}
 
 /* Hover highlight color for SDM-associable objects */
 [mcid]:hover div {
@@ -2045,4 +2053,3 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
     display: none;
   }
 }
-
