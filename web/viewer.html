@@ -90,6 +90,28 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     <script type="text/javascript" src="debugger.js"></script>
     <script type="text/javascript" src="viewer.js"></script>
     
+    <script>
+      dojoConfig= {
+        async: true,
+        paths: {
+         "dojo": "/js/dojo/dojo",
+         "dojox": "/js/dojo/dojox",
+         "dijit": "/js/dojo/dijit",
+         "pmApi": "/js/dojo/pmApi",
+         "pm": "/js/dojo/pm",
+         "noBusinessBase": "/js/dojo/noBusinessBase",
+         "noBusinessOslc": "/js/dojo/noBusinessOslc",
+         "dgrid": "/js/dojo/dgrid",
+         "put-selector": "/js/dojo/put-selector",
+         "xstyle": "/js/dojo/xstyle",
+         "dojoReleasePm": "/js/dojoReleasePm"
+        }
+      };
+      var DOJO_FRAMEWORK_PATH = "/js/dojo";
+    </script>
+    <!-- TODO - Un-hardcode this -->
+    <script src="<server_redacted>:9003/socket.io/socket.io.js"></script>
+    <script src="/js/dojo/dojo/dojo.js"></script>
     <script type="text/javascript" src="../sdmAddons/sdm.js"></script>
 <!--#else-->
 <!--#include viewer-snippet-minified.html-->
@@ -231,8 +253,8 @@ http://sourceforge.net/adobe/cmap/wiki/License/
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
-                <button id="sdmSidebarToggle" class="toolbarButton" title="Toggle SDM Sidebar" tabindex="12" data-l10n-id="toggle_sdm_sidebar">
-                  <span data-l10n-id="toggle_sdm_sidebar_label">Toggle SDM Sidebar</span>
+                <button id="sdmSidebarToggle" class="toolbarButton" title="Toggle SDM Sidebar" tabindex="12">
+                  <span>Toggle SDM Sidebar</span>
                 </button>
                 <button id="presentationMode" class="toolbarButton presentationMode hiddenLargeView" title="Switch to Presentation Mode" tabindex="13" data-l10n-id="presentation_mode">
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
@@ -290,7 +312,7 @@ http://sourceforge.net/adobe/cmap/wiki/License/
               </div>
             </div>
             <div id="sdmHistoryBar">
-              <label class="toolbarLabel" onclick="window.open('http://localhost:8888/web/sdmAddons/jit/example1.html?&historyCookie=' + encodeURIComponent(getCookie('sdmHistoryCookie')) + '&hierarchyCookie=' + encodeURIComponent(getCookie('sdmHierarchyCookie')));">History Graph</label>
+              <label class="toolbarLabel" onclick="window.open('<server_redacted>/jit/sdmAddons/example1.html?&historyCookie=' + encodeURIComponent(getCookie('sdmHistoryCookie')) + '&hierarchyCookie=' + encodeURIComponent(getCookie('sdmHierarchyCookie')));">History Graph</label>
             </div>
             <div id="loadingBar">
               <div class="progress">
