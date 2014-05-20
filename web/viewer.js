@@ -1117,6 +1117,8 @@ var PDFView = {
                   ' (PDF.js: ' + (PDFJS.version || '-') +
                   (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
 
+      //SDM DEVEL - We have our own implementation of this
+      /*
       var pdfTitle;
       if (metadata && metadata.has('dc:title')) {
         pdfTitle = metadata.get('dc:title');
@@ -1134,6 +1136,7 @@ var PDFView = {
         console.warn('Warning: AcroForm/XFA is not supported');
         PDFView.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
+      */
 
 //#if (FIREFOX || MOZCENTRAL)
 //    var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
