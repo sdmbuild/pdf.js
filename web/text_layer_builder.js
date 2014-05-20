@@ -94,6 +94,10 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
     this.textLayerDiv.appendChild(textLayerFrag);
     this.renderingDone = true;
+    
+    // Now that the text layer is rendered, notify SDM to highlight the page
+    sdmHighlightAfterLoaded(this.pageIdx + 1);
+    
     this.updateMatches();
   };
 
