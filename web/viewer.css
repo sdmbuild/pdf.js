@@ -1407,6 +1407,10 @@ canvas {
 label.sdmHighlight {
   background-color: rgba(0,255,0,0.3);
 }
+.sdmHighlight.sdmRectangleSelection {
+  background-color: rgba(0,255,0,0.3);
+  border: 2px solid #000;
+}
 
 /* SDM Selection */
 .sdmSelection div {
