@@ -1117,19 +1117,21 @@ var PDFView = {
                   ' (PDF.js: ' + (PDFJS.version || '-') +
                   (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
       
-      //TODO DEVEL
-      //var pdfTitle;
-      //if (metadata && metadata.has('dc:title')) {
-      //  pdfTitle = metadata.get('dc:title');
-      //}
-      //
-      //if (!pdfTitle && info && info['Title']) {
-      //  pdfTitle = info['Title'];
-      //}
-      //
-      //if (pdfTitle) {
-      //  self.setTitle(pdfTitle + ' - ' + document.title);
-      //}
+      //SDM DEVEL - We have our own implementation of this
+      /*
+      var pdfTitle;
+      if (metadata && metadata.has('dc:title')) {
+        pdfTitle = metadata.get('dc:title');
+      }
+      
+      if (!pdfTitle && info && info['Title']) {
+        pdfTitle = info['Title'];
+      }
+      
+      if (pdfTitle) {
+        self.setTitle(pdfTitle + ' - ' + document.title);
+      }
+      */
 
       if (info.IsAcroFormPresent) {
         console.warn('Warning: AcroForm/XFA is not supported');
