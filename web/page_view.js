@@ -446,7 +446,7 @@ var PageView = function pageView(container, id, scale,
     });
   };
 
-  this.draw = function pageviewDraw(callback) {
+  this.draw = function pageviewDraw(callback, forceRender) {
     var pdfPage = this.pdfPage;
 
     if (this.pagePdfPromise) {
@@ -457,7 +457,7 @@ var PageView = function pageView(container, id, scale,
       promise.then(function(pdfPage) {
         delete this.pagePdfPromise;
         this.setPdfPage(pdfPage);
-        this.draw(callback);
+        this.draw(callback, forceRender);
       }.bind(this));
       this.pagePdfPromise = promise;
       return;
@@ -607,7 +607,7 @@ var PageView = function pageView(container, id, scale,
       textLayer: textLayer,
       // intent: 'default', // === 'display'
       continueCallback: function pdfViewcContinueCallback(cont) {
-        if (PDFView.highestPriorityPage !== 'page' + self.id) {
+        if (PDFView.highestPriorityPage !== 'page' + self.id && (forceRender === false)) {
           self.renderingState = RenderingStates.PAUSED;
           self.resume = function resumeCallback() {
             self.renderingState = RenderingStates.RUNNING;
