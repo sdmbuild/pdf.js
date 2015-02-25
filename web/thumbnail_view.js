@@ -123,12 +123,12 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
     return !this.hasImage;
   };
 
-  this.draw = function thumbnailViewDraw(callback) {
+  this.draw = function thumbnailViewDraw(callback, forceRender) {
     if (!this.pdfPage) {
       var promise = PDFView.getPage(this.id);
       promise.then(function(pdfPage) {
         this.setPdfPage(pdfPage);
-        this.draw(callback);
+        this.draw(callback, forceRender);
       }.bind(this));
       return;
     }
@@ -150,7 +150,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
       canvasContext: ctx,
       viewport: drawViewport,
       continueCallback: function(cont) {
-        if (PDFView.highestPriorityPage !== 'thumbnail' + self.id) {
+        if (PDFView.highestPriorityPage !== 'thumbnail' + self.id && (forceRender === false)) {
           self.renderingState = RenderingStates.PAUSED;
           self.resume = function() {
             self.renderingState = RenderingStates.RUNNING;
