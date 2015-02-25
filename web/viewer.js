@@ -1116,27 +1116,25 @@ var PDFView = {
                   ' / ' + (info.Creator || '-').trim() + ']' +
                   ' (PDF.js: ' + (PDFJS.version || '-') +
                   (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
-
-      //SDM DEVEL - We have our own implementation of this
-      /*
-      var pdfTitle;
-      if (metadata && metadata.has('dc:title')) {
-        pdfTitle = metadata.get('dc:title');
-      }
-
-      if (!pdfTitle && info && info['Title']) {
-        pdfTitle = info['Title'];
-      }
-
-      if (pdfTitle) {
-        self.setTitle(pdfTitle + ' - ' + document.title);
-      }
+      
+      //TODO DEVEL
+      //var pdfTitle;
+      //if (metadata && metadata.has('dc:title')) {
+      //  pdfTitle = metadata.get('dc:title');
+      //}
+      //
+      //if (!pdfTitle && info && info['Title']) {
+      //  pdfTitle = info['Title'];
+      //}
+      //
+      //if (pdfTitle) {
+      //  self.setTitle(pdfTitle + ' - ' + document.title);
+      //}
 
       if (info.IsAcroFormPresent) {
         console.warn('Warning: AcroForm/XFA is not supported');
         PDFView.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
-      */
 
 //#if (FIREFOX || MOZCENTRAL)
 //    var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
@@ -1288,7 +1286,10 @@ var PDFView = {
 
   // Render a page or thumbnail view. This calls the appropriate function based
   // on the views state. If the view is already rendered it will return false.
-  renderView: function pdfViewRender(view, type) {
+  renderView: function pdfViewRender(view, type, forceRender) {
+    // Set default value for forceRender
+    forceRender = typeof forceRender !== 'undefined' ? forceRender : false;
+    
     var state = view.renderingState;
     switch (state) {
       case RenderingStates.FINISHED:
@@ -1302,7 +1303,7 @@ var PDFView = {
         break;
       case RenderingStates.INITIAL:
         PDFView.highestPriorityPage = type + view.id;
-        view.draw(this.renderHighestPriority.bind(this));
+        view.draw(this.renderHighestPriority.bind(this), forceRender);
         break;
     }
     return true;
