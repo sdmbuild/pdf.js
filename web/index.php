@@ -9,8 +9,10 @@
 
 // Loads the pdf.js viewer.html file and modifies the head section with the appropriate .js file includes (some dynamically fetched) to use it in our system
 
+$buildCheckPath = getcwd() . "/../../sdm/web/sites/pm/www/public/js/dojoReleasePm/";
+
 $doc = new DOMDocument();
-$doc->loadHTML(file_get_contents('./viewer.html'));
+@$doc->loadHTML(file_get_contents('./viewer.html'));
 
 function getServer()
 {
@@ -47,30 +49,34 @@ foreach($doc->childNodes as $item)
       $pNewSocketIoNode->setAttribute("src", getServer() . ":" . getWsPort() . "/socket.io/socket.io.js");
       $headNode->appendChild($pNewSocketIoNode);
 
+      $dojoPath = "/js/dojo";
+      if(is_dir($buildCheckPath))
+         $dojoPath = "/js/dojoReleasePm";
+
       $pNewSdmAddonsNode = $doc->createElement('script');
       // Add any tags that are needed here
       $pNewDojoNode = $doc->createElement('script', 'dojoConfig= {
         async: true,
         paths: {
-         "dojo": "/js/dojo/dojo",
-         "dojox": "/js/dojo/dojox",
-         "dijit": "/js/dojo/dijit",
-         "pmApi": "/js/dojo/pmApi",
-         "pm": "/js/dojo/pm",
-         "noBusinessBase": "/js/dojo/noBusinessBase",
-         "noBusinessOslc": "/js/dojo/noBusinessOslc",
-         "dgrid": "/js/dojo/dgrid",
-         "put-selector": "/js/dojo/put-selector",
-         "xstyle": "/js/dojo/xstyle",
-         "dojoReleasePm": "/js/dojoReleasePm"
+         "dojo": "' . $dojoPath . '/dojo",
+         "dojox": "' . $dojoPath . '/dojox",
+         "dijit": "' . $dojoPath . '/dijit",
+         "pmApi": "' . $dojoPath . '/pmApi",
+         "pm": "' . $dojoPath . '/pm",
+         "noBusinessBase": "' . $dojoPath . '/noBusinessBase",
+         "noBusinessOslc": "' . $dojoPath . '/noBusinessOslc",
+         "dgrid": "' . $dojoPath . '/dgrid",
+         "put-selector": "' . $dojoPath . '/put-selector",
+         "xstyle": "' . $dojoPath . '/xstyle",
+         "dojoReleasePm": "' . $dojoPath . '"
         }
       };
-      var DOJO_FRAMEWORK_PATH = "/js/dojo";');
+      var DOJO_FRAMEWORK_PATH = "' . $dojoPath . '";');
       $headNode->appendChild($pNewDojoNode);
 
       $pNewDojoSrcNode = $doc->createElement('script');
       $pNewDojoSrcNode->setAttribute("type", "text/javascript");
-      $pNewDojoSrcNode->setAttribute("src", "/js/dojo/dojo/dojo.js");
+      $pNewDojoSrcNode->setAttribute("src", $dojoPath . "/dojo/dojo.js");
       $headNode->appendChild($pNewDojoSrcNode);
       
       $pNewSdmAddonsNode->setAttribute("type", "text/javascript");
