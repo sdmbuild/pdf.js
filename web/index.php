@@ -34,7 +34,7 @@ function getWsPort()
 
 foreach($doc->childNodes as $item)
 {
-   if($item->tagName != 'html')
+   if($item->nodeType != XML_ELEMENT_NODE || $item->tagName != 'html')
       continue;
    
    foreach($item->childNodes as $htmlChildNode)
